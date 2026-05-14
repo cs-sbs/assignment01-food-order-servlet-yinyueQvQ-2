@@ -2,19 +2,133 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>外卖平台 - 首页</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>外卖点单 · 首页</title>
+    <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-<h1>欢迎来外卖平台</h1>
+<header class="site-header">
+    <div class="site-header__inner">
+        <div class="brand">
+            <div class="brand__mark" aria-hidden="true"></div>
+            <span class="brand__text">外卖点单</span>
+        </div>
+        <nav class="nav-links">
+            <a href="/">首页</a>
+            <a href="/menu" target="_blank" rel="noopener">纯文本菜单</a>
+        </nav>
+    </div>
+</header>
 
-<h2>新增订单</h2>
+<main>
+    <div class="layout">
+        <section class="card" aria-labelledby="menu-title">
+            <h2 id="menu-title">今日菜单</h2>
+            <p class="lede">从服务器拉取 <code>/menu</code>（纯文本），在本页解析后展示。</p>
+            <div class="menu-toolbar">
+                <input type="search" id="menu-q" placeholder="按名称筛选，例如 Fried" autocomplete="off">
+                <button type="button" id="menu-search">筛选</button>
+                <button type="button" id="menu-reset">全部</button>
+            </div>
+            <div id="menu-status" class="menu-loading">正在加载菜单…</div>
+            <ul id="menu-list" class="menu-list" hidden></ul>
+            <p class="menu-note">在地址栏直接打开 <a href="/menu">/menu</a> 时，浏览器会显示排版后的菜单页。</p>
+        </section>
 
-<form action="/order" method="post">
-    用户: <input name="customer"><br>
-    食物: <input name="food"><br>
-    数量: <input name="quantity"><br>
-    <input type="submit">
-</form>
+        <section class="card" aria-labelledby="order-title">
+            <h2 id="order-title">新建订单</h2>
+            <p class="lede">提交后由服务端创建订单；浏览器会收到带样式的结果页。</p>
+            <form action="/order" method="post">
+                <label class="field" for="customer">顾客姓名</label>
+                <input id="customer" type="text" name="customer" required autocomplete="name" placeholder="例如 Alice">
 
+                <label class="field" for="food">餐品名称</label>
+                <input id="food" type="text" name="food" required placeholder="例如 Fried Rice">
+
+                <label class="field" for="quantity">数量</label>
+                <input id="quantity" type="number" name="quantity" required min="1" step="1" value="1">
+
+                <button class="btn-submit" type="submit">提交订单</button>
+            </form>
+            <p class="hint">下单成功后可从结果页点「查看详情」；也可访问 <a href="/order/1001">/order/1001</a>（把数字改成你的订单号）。</p>
+        </section>
+    </div>
+</main>
+
+<script>
+(function () {
+    var statusEl = document.getElementById('menu-status');
+    var listEl = document.getElementById('menu-list');
+    var qInput = document.getElementById('menu-q');
+
+    function parseMenuText(text) {
+        var lines = text.trim().split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+        var items = [];
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            if (line.indexOf('No matching') === 0) return { empty: true, items: [] };
+            var m = /^(\d+)\.\s+(.+?)\s+-\s+\$(\d+)$/.exec(line);
+            if (m) items.push({ num: m[1], name: m[2], price: m[3] });
+        }
+        return { empty: items.length === 0, items: items };
+    }
+
+    function renderMenu(data) {
+        listEl.innerHTML = '';
+        if (data.empty) {
+            listEl.hidden = true;
+            statusEl.className = 'menu-empty';
+            statusEl.textContent = '没有匹配的菜品，试试别的关键字。';
+            statusEl.hidden = false;
+            return;
+        }
+        statusEl.textContent = '';
+        statusEl.className = '';
+        statusEl.hidden = true;
+        listEl.hidden = false;
+        data.items.forEach(function (it) {
+            var li = document.createElement('li');
+            li.className = 'menu-item';
+            li.innerHTML = '<strong>' + it.num + '. ' + escapeHtml(it.name) + '</strong><span class="price">$' + escapeHtml(it.price) + '</span>';
+            listEl.appendChild(li);
+        });
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    }
+
+    function loadMenu(query) {
+        statusEl.hidden = false;
+        listEl.hidden = true;
+        statusEl.className = 'menu-loading';
+        statusEl.textContent = '正在加载菜单…';
+        var url = '/menu' + (query ? '?name=' + encodeURIComponent(query) : '');
+        fetch(url, { headers: { 'Accept': 'text/plain' } })
+            .then(function (r) { return r.text(); })
+            .then(function (text) {
+                renderMenu(parseMenuText(text));
+            })
+            .catch(function () {
+                statusEl.hidden = false;
+                statusEl.className = 'menu-error';
+                statusEl.textContent = '加载失败，请确认服务已启动（jetty:run）。';
+            });
+    }
+
+    document.getElementById('menu-search').addEventListener('click', function () {
+        loadMenu(qInput.value.trim());
+    });
+    document.getElementById('menu-reset').addEventListener('click', function () {
+        qInput.value = '';
+        loadMenu('');
+    });
+    qInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); loadMenu(qInput.value.trim()); }
+    });
+
+    loadMenu('');
+})();
+</script>
 </body>
 </html>

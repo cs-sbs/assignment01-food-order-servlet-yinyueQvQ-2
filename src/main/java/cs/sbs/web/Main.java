@@ -1,17 +1,21 @@
 package cs.sbs.web;
 
-//TIP 要<b>运行</b>代码，请按 <shortcut actionId="Run"/> 或
-// 点击装订区域中的 <icon src="AllIcons.Actions.Execute"/> 图标。
+/**
+ * 本作业是 Servlet WAR 项目，Web 服务<strong>不是</strong>通过本类的 {@code main} 启动的。
+ * <p>
+ * 端口在 {@code pom.xml} 的 {@code jetty.http.port} 中配置（默认 <strong>8080</strong>），
+ * 由 {@code jetty-maven-plugin} 在运行 {@code jetty:run} 时生效。
+ * <p>
+ * 本地部署到 8080：在项目根目录双击或执行 {@code .\run-web.cmd}（与作业二同类一键脚本），
+ * 或执行 {@code mvnw.cmd jetty:run} / {@code mvn jetty:run}，浏览器访问 {@code http://localhost:8080/}。
+ */
 public class Main {
-    public static void main(String[] args) {
-        //TIP 当文本光标位于高亮显示的文本处时按 <shortcut actionId="ShowIntentionActions"/>
-        // 查看 IntelliJ IDEA 建议如何修正。
-        System.out.printf("Hello and welcome!");
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP 按 <shortcut actionId="Debug"/> 开始调试代码。我们已经设置了一个 <icon src="AllIcons.Debugger.Db_set_breakpoint"/> 断点
-            // 但您始终可以通过按 <shortcut actionId="ToggleLineBreakpoint"/> 添加更多断点。
-            System.out.println("i = " + i);
-        }
+    public static void main(String[] args) {
+        System.out.println("Food Order Servlet — Web 不在此 main 中启动。");
+        System.out.println("请在项目根目录执行:  mvnw.cmd jetty:run   （或: mvn jetty:run）");
+        System.out.println("默认端口见 pom.xml 中 <jetty.http.port>，当前为 8080。");
+        System.out.println("浏览器打开: http://localhost:8080/");
+        System.out.println("若 8080 被占用: mvnw.cmd jetty:run -Djetty.http.port=8081");
     }
 }
